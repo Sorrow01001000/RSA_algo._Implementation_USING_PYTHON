@@ -1,0 +1,2 @@
+#This class will generate 2 large prime numbers , compute n , compute phi(n) , choose public key exponent e , compute private key d , 
+# returns public key , private key 
