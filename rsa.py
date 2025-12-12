@@ -107,21 +107,16 @@ class RSA:
         """Decrypts list of integers to string."""
         d, n = priv_key
         decrypted_msg = ""
-        c_str = ""
+        c = 0
 
         for num in encrypted_msg:
             if ord(num) == 200:  # separator reached
-                c = int(c_str)
                 m = self.mod_exp(c, d, n)
                 decrypted_msg += chr(m)
-                c_str = ""
-        else:
-            c_str += str(ord(num) - 100)
+                c = 0   
+            else:
+                c = c * 1000 + (ord(num) - 100)
 
-        if c_str:
-            c = int(c_str)
-            m = self.mod_exp(c, d, n)
-            decrypted_msg += chr(m)    
         return decrypted_msg
 
 # --- Main Execution Block with Menu ---
