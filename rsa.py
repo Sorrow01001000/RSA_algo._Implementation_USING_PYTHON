@@ -4,6 +4,7 @@ class RSA:
     def __init__(self):
         self.public_key = None
         self.private_key = None
+        self.last_encrypted = None
 
     def gcd(self, a, b):
         """Calculates the Greatest Common Divisor."""
@@ -34,7 +35,7 @@ class RSA:
             y1 = y
         
         if temp_phi == 1:
-            return d + phi
+            return d % phi
 
     def is_prime(self, num):
         """Simple primality test."""
@@ -115,7 +116,7 @@ class RSA:
                 decrypted_msg += chr(m)
                 c = 0   
             else:
-                c = c * 1000 + (ord(num) - 100)
+                c = c * 10 + (ord(num) - 100)
 
         return decrypted_msg
 
@@ -143,16 +144,35 @@ if __name__ == "__main__":
     print(f"Public Key  (e, n): {pub}")
     print(f"Private Key (d, n): {priv}")
 
-    # USER INPUT
-    message = input("\nEnter a message to encrypt: ")
-
-    # Encrypt & Decrypt
-    encrypted = rsa.encrypt(message, pub)
-    decrypted = rsa.decrypt(encrypted, priv)
-
-    print("\n--- ENCRYPTION RESULT ---")
-    print("Encrypted (as numbers):")
-    print(", ".join(map(str, encrypted)))
-
-    print("\n--- DECRYPTION RESULT ---")
-    print(f"Decrypted text: {decrypted}")
+    # Menu loop
+    while True:
+        print("\n--- MENU ---")
+        print("1. Encrypt")
+        print("2. Decrypt")
+        print("3. Exit")
+        
+        choice = input("\nEnter your choice (1/2/3): ").strip()
+        
+        if choice == "1":
+            message = input("Enter a message to encrypt: ")
+            encrypted = rsa.encrypt(message, pub)
+            rsa.last_encrypted = encrypted
+            print("\n--- ENCRYPTION RESULT ---")
+            print("Encrypted (as char codes):")
+            print(", ".join(str(ord(c)) for c in encrypted))
+            print("\n(Message saved - you can decrypt it with option 2)")
+            
+        elif choice == "2":
+            if rsa.last_encrypted is None:
+                print("No encrypted message saved! Please encrypt a message first (option 1).")
+            else:
+                decrypted = rsa.decrypt(rsa.last_encrypted, priv)
+                print("\n--- DECRYPTION RESULT ---")
+                print(f"Decrypted text: {decrypted}")
+                
+        elif choice == "3":
+            print("Exiting... Goodbye!")
+            break
+            
+        else:
+            print("Invalid choice! Please enter 1, 2, or 3.")
