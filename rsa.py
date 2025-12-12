@@ -52,11 +52,25 @@ class RSA:
             n = random.randint(min_val, max_val)
             if self.is_prime(n):
                 return n
+            
+    def mod_exp(self, base, exp, mod):
+        result = 1
+        base = base % mod
+        while exp > 0:
+            if exp % 2 == 1:      
+                result = (result * base) % mod
+            base = (base * base) % mod
+            exp //= 2
+        return result       
 
     def generate_key_pair(self, key_size_approx=100):
         """Generates Public and Private keys."""
         p = self.generate_prime_candidate(key_size_approx, key_size_approx * 10)
         q = self.generate_prime_candidate(key_size_approx, key_size_approx * 10)
+
+        self.p=p
+        self.q=q
+
         while p == q:
             q = self.generate_prime_candidate(key_size_approx, key_size_approx * 10)
 
@@ -77,64 +91,73 @@ class RSA:
     def encrypt(self, message, pub_key):
         """Encrypts string to list of integers."""
         e, n = pub_key
-        encrypted_msg = []
+        encrypted_msg = ""
         for char in message:
             m = ord(char)
-            c = pow(m, e, n)
-            encrypted_msg.append(c)
+            c = self.mod_exp(m, e, n)
+            # Split c into digits and convert each digit to a character
+            # Add 100 to make it printable and not normal ASCII
+            for digit in str(c):
+                encrypted_msg += chr(int(digit) + 100)
+                # Add a separator character to mark end of number
+            encrypted_msg += chr(200)
         return encrypted_msg
 
     def decrypt(self, encrypted_msg, priv_key):
         """Decrypts list of integers to string."""
         d, n = priv_key
         decrypted_msg = ""
+        c_str = ""
+
         for num in encrypted_msg:
-            m = pow(num, d, n)
-            decrypted_msg += chr(m)
+            if ord(num) == 200:  # separator reached
+                c = int(c_str)
+                m = self.mod_exp(c, d, n)
+                decrypted_msg += chr(m)
+                c_str = ""
+        else:
+            c_str += str(ord(num) - 100)
+
+        if c_str:
+            c = int(c_str)
+            m = self.mod_exp(c, d, n)
+            decrypted_msg += chr(m)    
         return decrypted_msg
 
 # --- Main Execution Block with Menu ---
 if __name__ == "__main__":
     rsa = RSA()
-    
+
     print("--- RSA System Starting ---")
     print("Generating new Key Pair for this session...")
-    pub, priv = rsa.generate_key_pair(key_size_approx=1000)
-    print("Keys generated successfully.")
-    print(f"DEBUG info: Public Key: {pub}")
 
-    while True:
-        print("\n-------------------------")
-        print("       MAIN MENU")
-        print("-------------------------")
-        print("1. Encrypt a message")
-        print("2. Decrypt a message")
-        print("3. Exit")
-        
-        choice = input("\nEnter your choice (1-3): ")
-        
-        if choice == '1':
-            msg = input("Enter the message to encrypt: ")
-            cipher = rsa.encrypt(msg, pub)
-            print(f"\n[SUCCESS] Encrypted Output (copy these numbers):")
-            # Print as a comma-separated list for easier copying
-            print(", ".join(map(str, cipher)))
-            
-        elif choice == '2':
-            print("Enter the cipher numbers separated by commas (e.g., 1234, 5678):")
-            cipher_input = input("> ")
-            try:
-                # Convert string input "123, 456" into list of ints [123, 456]
-                cipher_list = [int(x.strip()) for x in cipher_input.split(',')]
-                plain_text = rsa.decrypt(cipher_list, priv)
-                print(f"\n[SUCCESS] Decrypted Message: {plain_text}")
-            except ValueError:
-                print("\n[ERROR] Invalid input. Please enter numbers separated by commas.")
-            except Exception as e:
-                print(f"\n[ERROR] Decryption failed: {e}")
-                
-        elif choice == '3':
-            print("Exiting program. Goodbye!")
-            break
-        else:
-            print("\n[INVALID] Please choose 1, 2, or 3.")
+    # Generate keys
+    pub, priv = rsa.generate_key_pair(key_size_approx=1000)
+
+    e, n = pub
+    d, _ = priv
+
+    # Print P and Q
+    print("\n--- INTERNAL VALUES ---")
+    print(f"p = {rsa.p}")
+    print(f"q = {rsa.q}")
+    print(f"n = {n}")
+    print(f"phi = {(rsa.p - 1) * (rsa.q - 1)}")
+
+    print("\n--- KEY INFORMATION ---")
+    print(f"Public Key  (e, n): {pub}")
+    print(f"Private Key (d, n): {priv}")
+
+    # USER INPUT
+    message = input("\nEnter a message to encrypt: ")
+
+    # Encrypt & Decrypt
+    encrypted = rsa.encrypt(message, pub)
+    decrypted = rsa.decrypt(encrypted, priv)
+
+    print("\n--- ENCRYPTION RESULT ---")
+    print("Encrypted (as numbers):")
+    print(", ".join(map(str, encrypted)))
+
+    print("\n--- DECRYPTION RESULT ---")
+    print(f"Decrypted text: {decrypted}")
