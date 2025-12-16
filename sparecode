@@ -9,7 +9,7 @@ ASCII_RANGE = ASCII_End_Range - ASCII_Start_Range + 1
 def is_prime(n): 
  
     if n <= 1: 
-        return False    
+        return False   
     for i in range(2, int(n**0.5) + 1):   
         if n % i == 0:   
             return False 
@@ -40,11 +40,7 @@ def mod_inv(e, m):
     org_m = m 
     a, b = 1, 0 
     c, d = 0, 1 
-   
- 
-   
- 
- 
+
     while m != 0: 
         q = e // m   
         (e, m) = (m, e % m)   
@@ -85,12 +81,6 @@ def gen_keys(p_lim, q_lim):
     e = 5   
     while gcd(m, e) != 1: 
         e += 2   
-   
- 
-   
- 
-     
-    
     d = mod_inv(e, m) 
     return (e, n), (d, n), (p, q, m) 
  
@@ -109,7 +99,7 @@ encrypted_values]
     return ''.join(decrypted) 
  
  
-if __name__ == "__RSA Main program interface__": 
+if __name__ == "__main__": 
      
      
     p_lim = int(input("Enter upper limit for p: ")) 
