@@ -1,0 +1,139 @@
+from sympy import prevprime 
+from math import * 
+ 
+ 
+ASCII_Start_Range = 33 
+ASCII_End_Range = 126    
+ASCII_RANGE = ASCII_End_Range - ASCII_Start_Range + 1 
+ 
+def is_prime(n): 
+ 
+    if n <= 1: 
+        return False    
+    for i in range(2, int(n**0.5) + 1):   
+        if n % i == 0:   
+            return False 
+    return True   
+ 
+ 
+def get_largest_prime(limit): 
+     
+    return prevprime(limit + 1) 
+ 
+ 
+def euc_mod_exp(base, exp, mod): 
+ 
+    if gcd(base, mod) != 1: 
+        raise ValueError("The 2 numbers are not coprime to each other.") 
+    base = base % mod  
+    result = 1 
+    while exp > 0: 
+        if exp % 2 == 1:   
+            result = (result * base) % mod 
+        base = (base * base) % mod   
+        exp //= 2 
+    return result 
+ 
+ 
+def mod_inv(e, m): 
+ 
+    org_m = m 
+    a, b = 1, 0 
+    c, d = 0, 1 
+   
+ 
+   
+ 
+ 
+    while m != 0: 
+        q = e // m   
+        (e, m) = (m, e % m)   
+        (a, c) = (c, a - q * c)   
+        (b, d) = (d, b - q * d)   
+ 
+    if e != 1: 
+        raise ValueError("Mod_inv does not have an exisitant value.") 
+     
+    return a % org_m   
+ 
+def numbers_to_ASCII(value): 
+     
+    chars = [] 
+    while value > 0: 
+     
+        chars.append(chr((value % ASCII_RANGE) + ASCII_Start_Range)) 
+        value //= ASCII_RANGE  
+    return ''.join(chars) 
+ 
+ 
+def ASCII_to_numbers(chars): 
+    
+    value = 0 
+    for char in reversed(chars): 
+        value = value * ASCII_RANGE + (ord(char) - ASCII_Start_Range) 
+    return value 
+ 
+ 
+def gen_keys(p_lim, q_lim): 
+     
+    p = get_largest_prime(p_lim) 
+    q = get_largest_prime(q_lim) 
+    n = p * q 
+    m = (p - 1) * (q - 1) 
+     
+    
+    e = 5   
+    while gcd(m, e) != 1: 
+        e += 2   
+   
+ 
+   
+ 
+     
+    
+    d = mod_inv(e, m) 
+    return (e, n), (d, n), (p, q, m) 
+ 
+ 
+def encrypt(msg, e, n): 
+     
+    cipher = [numbers_to_ASCII(euc_mod_exp(ord(char), e, n)) for char in msg] 
+    return ' '.join(cipher)   
+ 
+ 
+def decrypt(cipher, d, n): 
+ 
+    encrypted_values = cipher.split()  
+    decrypted = [chr(euc_mod_exp(ASCII_to_numbers(char), d, n)) for char in 
+encrypted_values] 
+    return ''.join(decrypted) 
+ 
+ 
+if __name__ == "__RSA Main program interface__": 
+     
+     
+    p_lim = int(input("Enter upper limit for p: ")) 
+    q_lim = int(input("Enter upper limit for q: ")) 
+     
+     
+    (e, n), (d, n), key_details = gen_keys(p_lim, q_lim) 
+    p, q, m = key_details 
+     
+    print("********************") 
+    print(f" p = {p}") 
+    print(f" q = {q}") 
+    print(f" n = {n}") 
+    print(f" m = {m}") 
+    print(f" e = {e}") 
+    print(f" d = {d}") 
+    print("********************") 
+ 
+     
+    msg = input("Enter original message: ") 
+print("********************") 
+cipher = encrypt(msg, e, n) 
+print("Cipher Message:", cipher)   
+print("********************") 
+dec_msg = decrypt(cipher, d, n) 
+print("Decrypted Message:", dec_msg) 
+print("********************")
