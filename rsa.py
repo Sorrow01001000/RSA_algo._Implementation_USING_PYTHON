@@ -1,178 +1,129 @@
-import random
+from sympy import prevprime 
+from math import * 
+ 
+ 
+ASCII_Start_Range = 33 
+ASCII_End_Range = 126    
+ASCII_RANGE = ASCII_End_Range - ASCII_Start_Range + 1 
+ 
+def is_prime(n): 
+ 
+    if n <= 1: 
+        return False   
+    for i in range(2, int(n**0.5) + 1):   
+        if n % i == 0:   
+            return False 
+    return True   
+ 
+ 
+def get_largest_prime(limit): 
+     
+    return prevprime(limit + 1) 
+ 
+ 
+def euc_mod_exp(base, exp, mod): 
+ 
+    if gcd(base, mod) != 1: 
+        raise ValueError("The 2 numbers are not coprime to each other.") 
+    base = base % mod  
+    result = 1 
+    while exp > 0: 
+        if exp % 2 == 1:   
+            result = (result * base) % mod 
+        base = (base * base) % mod   
+        exp //= 2 
+    return result 
+ 
+ 
+def mod_inv(e, m): 
+ 
+    org_m = m 
+    a, b = 1, 0 
+    c, d = 0, 1 
 
-class RSA:
-    def __init__(self):
-        self.public_key = None
-        self.private_key = None
-        self.last_encrypted = None
-
-    def gcd(self, a, b):
-        """Calculates the Greatest Common Divisor."""
-        while b != 0:
-            a, b = b, a % b
-        return a
-
-    def multiplicative_inverse(self, e, phi):
-        """Extended Euclidean Algorithm."""
-        d = 0
-        x1 = 0
-        x2 = 1
-        y1 = 1
-        temp_phi = phi
-        
-        while e > 0:
-            temp1 = temp_phi // e
-            temp2 = temp_phi - temp1 * e
-            temp_phi = e
-            e = temp2
-            
-            x = x2 - temp1 * x1
-            y = d - temp1 * y1
-            
-            x2 = x1
-            x1 = x
-            d = y1
-            y1 = y
-        
-        if temp_phi == 1:
-            return d % phi
-
-    def is_prime(self, num):
-        """Simple primality test."""
-        if num < 2: return False
-        if num == 2: return True
-        if num % 2 == 0: return False
-        for i in range(3, int(num**0.5) + 1, 2):
-            if num % i == 0:
-                return False
-        return True
-
-    def generate_prime_candidate(self, min_val, max_val):
-        """Generates a random prime number."""
-        while True:
-            n = random.randint(min_val, max_val)
-            if self.is_prime(n):
-                return n
-            
-    def mod_exp(self, base, exp, mod):
-        result = 1
-        base = base % mod
-        while exp > 0:
-            if exp % 2 == 1:      
-                result = (result * base) % mod
-            base = (base * base) % mod
-            exp //= 2
-        return result       
-
-    def generate_key_pair(self, key_size_approx=100):
-        """Generates Public and Private keys."""
-        p = self.generate_prime_candidate(key_size_approx, key_size_approx * 10)
-        q = self.generate_prime_candidate(key_size_approx, key_size_approx * 10)
-
-        self.p=p
-        self.q=q
-
-        while p == q:
-            q = self.generate_prime_candidate(key_size_approx, key_size_approx * 10)
-
-        n = p * q
-        phi = (p - 1) * (q - 1)
-
-        e = random.randrange(1, phi)
-        while self.gcd(e, phi) != 1:
-            e = random.randrange(1, phi)
-
-        d = self.multiplicative_inverse(e, phi)
-
-        self.public_key = (e, n)
-        self.private_key = (d, n)
-        
-        return self.public_key, self.private_key
-
-    def encrypt(self, message, pub_key):
-        """Encrypts string to list of integers."""
-        e, n = pub_key
-        encrypted_msg = ""
-        for char in message:
-            m = ord(char)
-            c = self.mod_exp(m, e, n)
-            # Split c into digits and convert each digit to a character
-            # Add 100 to make it printable and not normal ASCII
-            for digit in str(c):
-                encrypted_msg += chr(int(digit) + 100)
-                # Add a separator character to mark end of number
-            encrypted_msg += chr(200)
-        return encrypted_msg
-
-    def decrypt(self, encrypted_msg, priv_key):
-        """Decrypts list of integers to string."""
-        d, n = priv_key
-        decrypted_msg = ""
-        c = 0
-
-        for num in encrypted_msg:
-            if ord(num) == 200:  # separator reached
-                m = self.mod_exp(c, d, n)
-                decrypted_msg += chr(m)
-                c = 0   
-            else:
-                c = c * 10 + (ord(num) - 100)
-
-        return decrypted_msg
-
-# --- Main Execution Block with Menu ---
-if __name__ == "__main__":
-    rsa = RSA()
-
-    print("--- RSA System Starting ---")
-    print("Generating new Key Pair for this session...")
-
-    # Generate keys
-    pub, priv = rsa.generate_key_pair(key_size_approx=1000)
-
-    e, n = pub
-    d, _ = priv
-
-    # Print P and Q
-    print("\n--- INTERNAL VALUES ---")
-    print(f"p = {rsa.p}")
-    print(f"q = {rsa.q}")
-    print(f"n = {n}")
-    print(f"phi = {(rsa.p - 1) * (rsa.q - 1)}")
-
-    print("\n--- KEY INFORMATION ---")
-    print(f"Public Key  (e, n): {pub}")
-    print(f"Private Key (d, n): {priv}")
-
-    # Menu loop
-    while True:
-        print("\n--- MENU ---")
-        print("1. Encrypt")
-        print("2. Decrypt")
-        print("3. Exit")
-        
-        choice = input("\nEnter your choice (1/2/3): ").strip()
-        
-        if choice == "1":
-            message = input("Enter a message to encrypt: ")
-            encrypted = rsa.encrypt(message, pub)
-            rsa.last_encrypted = encrypted
-            print("\n--- ENCRYPTION RESULT ---")
-            print("Encrypted (as char codes):")
-            print(", ".join(str(ord(c)) for c in encrypted))
-            print("\n(Message saved - you can decrypt it with option 2)")
-            
-        elif choice == "2":
-            if rsa.last_encrypted is None:
-                print("No encrypted message saved! Please encrypt a message first (option 1).")
-            else:
-                decrypted = rsa.decrypt(rsa.last_encrypted, priv)
-                print("\n--- DECRYPTION RESULT ---")
-                print(f"Decrypted text: {decrypted}")
-                
-        elif choice == "3":
-            print("Exiting... Goodbye!")
-            break
-            
-        else:
-            print("Invalid choice! Please enter 1, 2, or 3.")
+    while m != 0: 
+        q = e // m   
+        (e, m) = (m, e % m)   
+        (a, c) = (c, a - q * c)   
+        (b, d) = (d, b - q * d)   
+ 
+    if e != 1: 
+        raise ValueError("Mod_inv does not have an exisitant value.") 
+     
+    return a % org_m   
+ 
+def numbers_to_ASCII(value): 
+     
+    chars = [] 
+    while value > 0: 
+     
+        chars.append(chr((value % ASCII_RANGE) + ASCII_Start_Range)) 
+        value //= ASCII_RANGE  
+    return ''.join(chars) 
+ 
+ 
+def ASCII_to_numbers(chars): 
+    
+    value = 0 
+    for char in reversed(chars): 
+        value = value * ASCII_RANGE + (ord(char) - ASCII_Start_Range) 
+    return value 
+ 
+ 
+def gen_keys(p_lim, q_lim): 
+     
+    p = get_largest_prime(p_lim) 
+    q = get_largest_prime(q_lim) 
+    n = p * q 
+    m = (p - 1) * (q - 1) 
+     
+    
+    e = 5   
+    while gcd(m, e) != 1: 
+        e += 2   
+    d = mod_inv(e, m) 
+    return (e, n), (d, n), (p, q, m) 
+ 
+ 
+def encrypt(msg, e, n): 
+     
+    cipher = [numbers_to_ASCII(euc_mod_exp(ord(char), e, n)) for char in msg] 
+    return ' '.join(cipher)   
+ 
+ 
+def decrypt(cipher, d, n): 
+ 
+    encrypted_values = cipher.split()  
+    decrypted = [chr(euc_mod_exp(ASCII_to_numbers(char), d, n)) for char in 
+encrypted_values] 
+    return ''.join(decrypted) 
+ 
+ 
+if __name__ == "__main__": 
+     
+     
+    p_lim = int(input("Enter upper limit for p: ")) 
+    q_lim = int(input("Enter upper limit for q: ")) 
+     
+     
+    (e, n), (d, n), key_details = gen_keys(p_lim, q_lim) 
+    p, q, m = key_details 
+     
+    print("********************") 
+    print(f" p = {p}") 
+    print(f" q = {q}") 
+    print(f" n = {n}") 
+    print(f" m = {m}") 
+    print(f" e = {e}") 
+    print(f" d = {d}") 
+    print("********************") 
+ 
+     
+    msg = input("Enter original message: ") 
+print("********************") 
+cipher = encrypt(msg, e, n) 
+print("Cipher Message:", cipher)   
+print("********************") 
+dec_msg = decrypt(cipher, d, n) 
+print("Decrypted Message:", dec_msg) 
+print("********************")
